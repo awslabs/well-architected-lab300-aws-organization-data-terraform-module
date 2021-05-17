@@ -12,7 +12,7 @@ This can be deployed into your linked account or you management account dependin
 
 ```
 module "aws_tf_organisation_data" {
-  source = "https://github.com/awslabs/well-architected-lab300-aws-organization-data-terraform-module"
+  source = "github.com/awslabs/well-architected-lab300-aws-organization-data-terraform-module"
   destination_bucket = "Name-of-Bucket-to-create"
   tags = "BU,Env"
   management_account_id = "12345678901"
