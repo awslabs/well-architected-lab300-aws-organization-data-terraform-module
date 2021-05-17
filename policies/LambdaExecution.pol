@@ -1,0 +1,43 @@
+{
+"Version":"2012-10-17",
+"Statement":[
+{
+"Sid":"S3Org",
+"Effect":"Allow",
+"Action":[
+"s3:PutObject",
+"s3:DeleteObjectVersion",
+"s3:DeleteObject"
+],
+"Resource":"arn:aws:s3:::(bucket name)/*"
+},
+{
+"Sid":"OrgData",
+"Effect":"Allow",
+"Action":[
+"organizations:ListAccounts",
+"organizations:ListCreateAccountStatus",
+"organizations:DescribeOrganization",
+"organizations:ListTagsForResource"
+],
+"Resource":"*"
+},
+{
+"Sid":"Logs",
+"Effect": "Allow",
+"Action": [
+"logs:CreateLogGroup",
+"logs:CreateLogStream",
+"logs:PutLogEvents",
+"logs:DescribeLogStreams"
+],
+"Resource": "arn:aws:logs:*:*:*"
+},
+{
+"Sid": "assume",
+"Effect": "Allow",
+"Action": "sts:AssumeRole",
+"Resource": "arn:aws:iam::(account id):role/OrganizationLambdaAccessRole"
+}
+]
+}
