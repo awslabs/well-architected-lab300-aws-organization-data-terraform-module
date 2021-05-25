@@ -68,61 +68,61 @@ If you are deploying into an AWS Linked account then you need to create a role i
 
 
 ```
-  variable "management_account_id" {
-    type = number
-    description = "Enter your sub account id which is where we started the lab"
-  }
+variable "management_account_id" {
+  type = number
+  description = "Enter your sub account id which is where we started the lab"
+}
 
-  resource "aws_iam_role" "role" {
-    name = "OrganizationLambdaAccessRole"
-    assume_role_policy = jsonencode({
-      Version = "2012-10-17",
-      Statement = [
+resource "aws_iam_role" "role" {
+  name = "OrganizationLambdaAccessRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Action    = "sts:AssumeRole",
+        Principal = { "AWS" : "arn:aws:iam::${var.management_account_id}:role/LambdaOrgRole" }
+    }]
+  })
+}
+
+resource "aws_iam_policy" "policy" {
+  name        = "organizations-permissons"
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
         {
-          Effect    = "Allow",
-          Action    = "sts:AssumeRole",
-          Principal = { "AWS" : "arn:aws:iam::${var.management_account_id}:role/LambdaOrgRole" }
-      }]
-    })
-  }
-
-  resource "aws_iam_policy" "policy" {
-    name        = "organizations-permissons"
-    policy = <<EOF
-  {
-      "Version": "2012-10-17",
-      "Statement": [
-          {
-              "Action": [
-                  "organizations:ListAccountsForParent",
-                  "organizations:ListRoots",
-                  "organizations:ListCreateAccountStatus",
-                  "organizations:ListAccounts",
-                  "organizations:ListTagsForResource",
-                  "organizations:DescribeOrganization",
-                  "organizations:DescribeOrganizationalUnit",
-                  "organizations:DescribeAccount",
-                  "organizations:ListParents",
-                  "organizations:ListOrganizationalUnitsForParent",
-                  "organizations:ListChildren"
-              ],
-              "Resource": "*",
-              "Effect": "Allow"
-          }
-      ]
-  }
-  EOF
-  }
+            "Action": [
+                "organizations:ListAccountsForParent",
+                "organizations:ListRoots",
+                "organizations:ListCreateAccountStatus",
+                "organizations:ListAccounts",
+                "organizations:ListTagsForResource",
+                "organizations:DescribeOrganization",
+                "organizations:DescribeOrganizationalUnit",
+                "organizations:DescribeAccount",
+                "organizations:ListParents",
+                "organizations:ListOrganizationalUnitsForParent",
+                "organizations:ListChildren"
+            ],
+            "Resource": "*",
+            "Effect": "Allow"
+        }
+    ]
+}
+EOF
+}
 
 
-  resource "aws_iam_role_policy_attachment" "attach-organizations-permissons" {
-    role       = aws_iam_role.role.name
-    policy_arn = aws_iam_policy.policy.arn
-  }
-  resource "aws_iam_role_policy_attachment" "attach-AWSLambdaExecute" {
-    role       = aws_iam_role.role.name
-    policy_arn = "arn:aws:iam::aws:policy/AWSLambdaExecute"
-  }
+resource "aws_iam_role_policy_attachment" "attach-organizations-permissons" {
+  role       = aws_iam_role.role.name
+  policy_arn = aws_iam_policy.policy.arn
+}
+resource "aws_iam_role_policy_attachment" "attach-AWSLambdaExecute" {
+  role       = aws_iam_role.role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSLambdaExecute"
+}
 ```
 
 
