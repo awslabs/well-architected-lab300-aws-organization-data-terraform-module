@@ -48,4 +48,14 @@ data "aws_caller_identity" "current" {
 
 resource "aws_s3_bucket" "destination_bucket" {
   bucket = var.destination_bucket
+  versioning {
+    enabled = true
+  }
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm     = "AES256"
+      }
+    }
+  }
 }
