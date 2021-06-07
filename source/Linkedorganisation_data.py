@@ -22,10 +22,10 @@ def list_tags(client, resource_id):
     return tags
     
 def lambda_handler(event, context):
-    management_account_id = os.environ["MANAGMENT_ACCOOUNT_ID"]
+
     sts_connection = boto3.client('sts')
     acct_b = sts_connection.assume_role(
-        RoleArn=f"arn:aws:iam::{management_account_id}:role/OrganizationLambdaAccessRole",
+        RoleArn="arn:aws:iam::(account id):role/OrganizationLambdaAccessRole",
         RoleSessionName="cross_acct_lambda"
     )
     
@@ -77,46 +77,41 @@ def account_data(f, parent, parent_name, client):
 def s3_upload(file_name):
     bucket = os.environ["BUCKET_NAME"] #Using environment variables below the Lambda will use your S3 bucket
     try:
-        s3 = boto3.client('s3', os.environ["REGION"],
+        s3 = boto3.client('s3', '(Region)',
                         config=Config(s3={'addressing_style': 'path'}))
         s3.upload_file(
             f'/tmp/{file_name}.json', bucket, f"organisation-data/{file_name}.json") #uploading the file with the data to s3
         print(f"{file_name}org data in s3")
     except Exception as e:
         print(e)
-
-
+def printout(parent_id, test, client):
+    print(parent_id)
+    paginator = client.get_paginator('list_children')
+    iterator = paginator.paginate( ParentId=parent_id, ChildType='ORGANIZATIONAL_UNIT')
+    for page in iterator:
+        for ou in page['Children']:
+            test.append(ou['Id'])
+            printout(ou['Id'], test, client)
+    return test
 
 def get_ou_ids(parent_id, client):
     full_result = {}
+    test = []
+    ous = printout(parent_id, test, client)
+    print(ous)
 
-    paginator = client.get_paginator('list_organizational_units_for_parent')
-    iterator  = paginator.paginate(
-    ParentId=parent_id
-
-    )
-
-    for page in iterator:
-        for ou in page['OrganizationalUnits']:
-            print(ou['Name'])
-            full_result[ou['Id']]=[]
-            full_result[ou['Id']].append(ou['Name'])
-
-
+    for ou in ous:
+        ou_info = client.describe_organizational_unit(OrganizationalUnitId=ou)
+        full_result[ou]=[]
+        full_result[ou].append(ou_info['OrganizationalUnit']['Name'])
     return full_result
 
 def get_acc_ids(parent_id,  client):
-    full_result = []
-
-    paginator = client.get_paginator('list_accounts_for_parent')
-    iterator  = paginator.paginate(
-    ParentId=parent_id
-    )
-
-    for page in iterator:
-        for acc in page['Accounts']:
-            print(acc['Id'])
-            full_result.append(acc['Id'])
-
-
-    return full_result
+  full_result = []
+  paginator = client.get_paginator('list_accounts_for_parent')
+  iterator  = paginator.paginate(ParentId=parent_id)
+  for page in iterator:
+    for acc in page['Accounts']:
+      print(acc['Id'])
+      full_result.append(acc['Id'])
+  return full_result
