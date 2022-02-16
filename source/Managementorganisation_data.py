@@ -7,6 +7,7 @@ from botocore.client import Config
 import os
 import datetime
 import json
+import logging
 
 def myconverter(o):
     if isinstance(o, datetime.datetime):
@@ -34,63 +35,81 @@ def lambda_handler(event, context):
         account_data(f, root_id, root_id, client)
     s3_upload('acc-org')
 
-def account_data(f, parent, parent_name, client):
-    tags_check = os.environ["TAGS"]
-    account_id_list = get_acc_ids(parent, client)
-    for account_id in account_id_list:
-        response = client.describe_account(AccountId=account_id)
-        account  = response["Account"]          
-        if tags_check != '':
-            tags_list = list_tags(client, account["Id"]) 
-            
-            for tag in os.environ.get("TAGS").split(","): 
-                for org_tag in tags_list:
-                    if tag == org_tag['Key']:
-                        value = org_tag['Value']
-                        kv = {tag : value}
-                        account.update(kv)
-        account.update({'Parent' : parent_name})        
-        data = json.dumps(account, default = myconverter)
-        f.write(data)
-        f.write('\n')
+def get_ou_ids(parent_id, client):
+    full_result = {}
+    test = []
+    ous = ou_loop(parent_id, test, client)
+    print(ous)
+    
+    for ou in ous:
+        ou_info = client.describe_organizational_unit(OrganizationalUnitId=ou)
+        full_result[ou]=[]
+        full_result[ou].append(ou_info['OrganizationalUnit']['Name'])
+        tags =list_tags(client, ou)
+        full_result[ou].append(tags)
+    return full_result
 
-def s3_upload(file_name):
-    bucket = os.environ["BUCKET_NAME"]
-    try:
-        s3 = boto3.client('s3', '(Region)', config=Config(s3={'addressing_style': 'path'}))
-        s3.upload_file(f'/tmp/{file_name}.json', bucket, f"organisation-data/{file_name}.json")
-        print(f"{file_name}org data in s3")
-    except Exception as e:
-        print(e)
-
-def printout(parent_id, test, client):
+def ou_loop(parent_id, test, client):
     print(parent_id)
     paginator = client.get_paginator('list_children')
     iterator = paginator.paginate( ParentId=parent_id, ChildType='ORGANIZATIONAL_UNIT')
     for page in iterator:
         for ou in page['Children']:
             test.append(ou['Id'])
-            printout(ou['Id'], test, client)
+            ou_loop(ou['Id'], test, client)
     return test
 
-def get_ou_ids(parent_id, client):
-    full_result = {}
-    test = []
-    ous = printout(parent_id, test, client)
-    print(ous)
-
-    for ou in ous:
-        ou_info = client.describe_organizational_unit(OrganizationalUnitId=ou)
-        full_result[ou]=[]
-        full_result[ou].append(ou_info['OrganizationalUnit']['Name'])
-    return full_result
+def account_data(f, parent, parent_name, client, parent_tags):
+    tags_check = os.environ["TAGS"]
+    account_id_list = get_acc_ids(parent, client)
+    for account_id in account_id_list:
+        response = client.describe_account(AccountId=account_id)
+        account  = response["Account"]          
+        if tags_check != '':
+            tags_list = list_tags(client, account["Id"])
+            for tag in os.environ.get("TAGS").split(","):
+                for org_tag in tags_list:
+                    if tag == org_tag['Key']: 
+                        value = org_tag['Value']
+                        kv = {tag : value}
+                        account.update(kv)
+        account.update({'Parent' : parent_name, 'Parent_Tags':parent_tags})        
+        data = json.dumps(account, default = timeconverter) 
+        f.write(data)
+        f.write('\n')
 
 def get_acc_ids(parent_id,  client):
-  full_result = []
-  paginator = client.get_paginator('list_accounts_for_parent')
-  iterator  = paginator.paginate(ParentId=parent_id)
-  for page in iterator:
-    for acc in page['Accounts']:
-      print(acc['Id'])
-      full_result.append(acc['Id'])
-  return full_result
+    full_result = []
+    paginator = client.get_paginator('list_accounts_for_parent')
+    iterator  = paginator.paginate(ParentId=parent_id)
+    for page in iterator:
+        for acc in page['Accounts']:
+            print(acc['Id'])
+            full_result.append(acc['Id'])
+    return full_result
+
+def list_tags(client, resource_id): 
+    tags = []
+    paginator = client.get_paginator("list_tags_for_resource")
+    response_iterator = paginator.paginate(ResourceId=resource_id)
+    for response in response_iterator:
+        tags.extend(response['Tags'])
+    return tags
+
+def s3_upload(file_name):
+    bucket = os.environ["BUCKET_NAME"] 
+    try:
+        s3 = boto3.client('s3', os.environ["REGION"],config=Config(s3={'addressing_style': 'path'}))
+        s3.upload_file(f'/tmp/{file_name}.json', bucket, f"organisation-data/{file_name}.json") 
+        print(f"{file_name}org data in s3")
+    except Exception as e:
+        print(e)
+
+def start_crawler(Crawler_Name):
+    glue_client = boto3.client("glue")
+    try:
+        glue_client.start_crawler(Name=Crawler_Name)
+        print(f"{Crawler_Name} has been started")
+    except Exception as e:
+        # Send some context about this error to Lambda Logs
+        logging.warning("%s" % e)

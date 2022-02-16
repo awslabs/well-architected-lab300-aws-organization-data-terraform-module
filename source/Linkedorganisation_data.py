@@ -8,6 +8,7 @@ from botocore.client import Config
 import os
 import datetime
 import json
+import logging
 
 def myconverter(o):
     if isinstance(o, datetime.datetime):
