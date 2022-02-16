@@ -1,6 +1,6 @@
 resource "aws_glue_crawler" "organization" {
   database_name = "${var.cur_database}"
-  name          = "${var.function_prefix}OrgGlueCrawler"
+  name          = "${var.function_prefix}Org_Glue_Crawler"
   role          = aws_iam_role.AWS-Organization-Data-Glue-Crawler.arn
   schedule      = "cron(0 8 ? * MON *)"
 
