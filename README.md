@@ -30,7 +30,7 @@ If you wish to deploy to your linked account you will need to deploy a role to a
 
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-----:|:-----:|
-| destination\_bucket | Name of existsing s3 bucket to put data in | string | `""` | yes |
+| destination\_bucket | Name of s3 bucket to put data in | string | `""` | yes |
 | management\_account\_id | Managemant account ID holds your org data | string | `""` | yes |
 | tags | Account level tags you wish to collect | string | `""` | yes |
 | organisation\_cron | Rate expression for when to run the review of eips| string | `"ccron(0 6 ? * MON *)"` | no 
