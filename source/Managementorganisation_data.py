@@ -88,7 +88,7 @@ def get_ou_ids(parent_id, client):
             print(ou['Name'])
             full_result[ou['Id']]=[]
             full_result[ou['Id']].append(ou['Name'])
-
+            full_result.update(get_ou_ids(ou['Id'], client))
 
     return full_result
 
