@@ -13,8 +13,8 @@ variable "destination_bucket" {
 }
 
 variable "account" {
-  type = string
-  default = "Linked"
+  type        = string
+  default     = "Linked"
   description = "if linked not needed if Management account put in Management"
 }
 

@@ -5,7 +5,7 @@ variable "linked_account_id" {
 
 variable "function_prefix" {
   description = "only needed if you used in main deployment"
-  default = ""
+  default     = ""
 }
 
 resource "aws_iam_role" "role" {
