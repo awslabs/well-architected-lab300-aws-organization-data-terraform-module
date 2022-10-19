@@ -1,5 +1,5 @@
 resource "aws_glue_crawler" "organization" {
-  database_name = "${var.cur_database}"
+  database_name = var.cur_database
   name          = "${var.function_prefix}Org_Glue_Crawler"
   role          = aws_iam_role.AWS-Organization-Data-Glue-Crawler.arn
   schedule      = "cron(0 8 ? * MON *)"
@@ -75,5 +75,5 @@ data "aws_iam_policy" "GluePolicy" {
 
 resource "aws_iam_role_policy_attachment" "glue-role-policy-attach" {
   role       = aws_iam_role.AWS-Organization-Data-Glue-Crawler.id
-  policy_arn = "${data.aws_iam_policy.GluePolicy.arn}"
+  policy_arn = data.aws_iam_policy.GluePolicy.arn
 }
