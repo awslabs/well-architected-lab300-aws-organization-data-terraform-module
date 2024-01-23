@@ -10,7 +10,7 @@ resource "aws_lambda_function" "organisation_data" {
   role             = aws_iam_role.iam_role_for_organisation.arn
   handler          = "${var.account}organisation_data.lambda_handler"
   source_code_hash = data.archive_file.organisation_data_zip.output_base64sha256
-  runtime          = "python3.6"
+  runtime          = "python3.12"
   memory_size      = var.memory_size
   timeout          = var.timeout
   environment {
@@ -48,14 +48,21 @@ data "aws_caller_identity" "current" {
 
 resource "aws_s3_bucket" "destination_bucket" {
   bucket = var.destination_bucket
-  versioning {
-    enabled = true
+}
+
+resource "aws_s3_bucket_versioning" "destination_bucket" {
+  bucket = aws_s3_bucket.destination_bucket.id
+  versioning_configuration {
+    status = "Enabled"
   }
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm     = "AES256"
-      }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "destination_bucket" {
+  bucket = aws_s3_bucket.destination_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "AES256"
     }
   }
 }
